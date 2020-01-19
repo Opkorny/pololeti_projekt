@@ -19,12 +19,11 @@ class MyApp:
         self.users = []
         self.object = None
         self.objects = []
-        self.object = None
-        self.objects = []
         self.screen_width = self.parent.winfo_screenwidth()
         self.screen_height = self.parent.winfo_screenheight()
         self.passwd = None
         self.time = None
+        self.json_neco = None
         self.drawWidgets()
         self.open()
 
@@ -62,7 +61,9 @@ class MyApp:
     def object_decoder(self, obj):
         if obj['type'] == 'folder':
             f = folder(obj['_Shape__x'], obj['_Shape__y'])
-            f.objects = obj['objects']
+            for i in obj['objects']:
+                print(i)
+                f.objects = json.loads(i,object_hook=self.object_decoder)
         if obj['type'] == 'filetxt':  
             f = filetxt(obj['_Shape__x'], obj['_Shape__y'])
             f.text = obj['text']
@@ -78,14 +79,25 @@ class MyApp:
         try:
             my_file = open("objects.json", "r")
             self.objects = json.loads(my_file.read(),object_hook=self.object_decoder)
+            print(self.objects)
             self.redraw_canvas()
         except:
             pass
 
     def save(self):
-        json_data = json.dumps([ob.__dict__ for ob in self.objects])
+        json_data = ([ob.__dict__ for ob in self.objects])
+        for f in self.objects:
+            if f.__getitem__(type) == 'folder':
+                try:
+                    self.json_neco = ([ob.__dict__ for ob in f.objects])
+                except:
+                    pass
+        for i in json_data:
+            if i['type'] == 'folder' and self.json_neco:
+                i['objects'] = self.json_neco
+        json_dump = json.dumps(json_data)
         my_file = open("objects.json", "w")
-        my_file.write(json_data)
+        my_file.write(json_dump)
 
     def start_menu(self):
         for u in self.users:
@@ -126,6 +138,7 @@ class MyApp:
             for f in self.objects:
                 f.draw(self.canvas) 
             self.save()
+        
 
     def on_mouse_move(self, event):
         self.x = self.canvas.canvasx(event.x)
@@ -212,7 +225,8 @@ class MyApp:
             obj = openfile(self.parent,self.object)
             self.parent.wait_window(obj.top)
         else:
-            pass
+            obj = openfolder(self.parent,self.object)
+            self.parent.wait_window(obj.top)
 
 root = Tk()
 root.attributes("-fullscreen", True)
