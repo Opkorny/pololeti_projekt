@@ -4,6 +4,7 @@ DEFAULT_CONFIG = {"fill":"white",
       "outline":"white",
       "width":"3",}
 
+#Objekt obsahující pouze souřadnice X a Y
 class Point():
     def __init__(self, x, y):
         self.x = float(x)
@@ -12,6 +13,7 @@ class Point():
     def getX(self): return self.x
     def getY(self): return self.y
 
+#Základní "template" objektů 
 class Shape(ABC):
     def __init__(self,x,y):
         self.type = self.__class__.__name__
@@ -24,12 +26,15 @@ class Shape(ABC):
         self.fill = DEFAULT_CONFIG['fill']
         self.name = None
 
+#Určí formát ve kterém se objekt bude vypisovat
     def __repr__(self):
         return "Object(type: {},x: {},y: {},width: {},height: {},fill: {})".format(self.type,self.x, self.y,self.width,self.height,self.fill)
 
+#Zjistí typ objektu
     def __getitem__(self, type):
         return self.type[0:]
 
+#Metody, které zajišťují správné nastavení objektů po importování z JSONu
     @property
     def x(self):
         return self.__x
@@ -82,6 +87,7 @@ class Shape(ABC):
     def detect_cursor(self, point):
         pass
 
+#Objekt uživatele
 class user(Shape):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -90,6 +96,7 @@ class user(Shape):
         self.password = 'student'
         self.logged = False
 
+#Nastavení podoby objektu jak se bude vykreslovat
     def draw(self,canvas):
         user = canvas.create_rectangle(self.x - self.width/2, self.y - self.height/2 ,self.x + self.width/2,self.y + self.height/2, fill=self.fill, outline=self.outline_color, width=self.outline_width)
         user += canvas.create_oval(self.x - 20, self.y - 20,self.x + 20,self.y + 20, fill='white', outline='white', width=4)
@@ -97,9 +104,11 @@ class user(Shape):
         user += canvas.create_line(self.x, self.y,self.x + 20,self.y + 38, fill='white', width=5)
         return user
 
+#Detekuje zda se kurzor nachází v objektu
     def detect_cursor(self,point):
         return (self.x - self.width/2 <= point.x <= self.x + self.width/2 and self.y - self.height/2 <= point.y <= self.y + self.height/2)
 
+#Objekt složky
 class folder(Shape):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -111,18 +120,22 @@ class folder(Shape):
         self.name = None
         self.objects = []
 
+#Určí formát ve kterém se objekt bude vypisovat
     def __repr__(self):
         return "Object(type: {},x: {},y: {},width: {},height: {},fill: {}, objects: {})".format(self.type,self.x, self.y,self.width,self.height,self.fill,self.objects)
 
+#Nastavení podoby objektu jak se bude vykreslovat
     def draw(self,canvas):
         folder = canvas.create_rectangle(self.x - self.width/2, self.y - self.height/2,self.x + self.width/2,self.y + self.height/2, fill=self.fill, outline=self.outline_color, width=self.outline_width)
         folder += canvas.create_rectangle(self.x - self.width/2, self.y - self.height/2 + 10 ,self.x + self.width/2 - 10,self.y + self.height/2, fill=self.fill, outline=self.outline_color, width=self.outline_width)
         folder += canvas.create_text(self.x - 2.5*len(self.name),self.y + 40, anchor='w', text="%s" % self.name)
         return folder
 
+#Detekuje zda se kurzor nachází v objektu
     def detect_cursor(self,point):
         return (self.x - self.width/2 <= point.x <= self.x + self.width/2 and self.y - self.height/2 <= point.y <= self.y + self.height/2)
 
+#Objekt souboru txt
 class filetxt(Shape):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -134,9 +147,11 @@ class filetxt(Shape):
         self.name = None
         self.text = ""
 
+#Určí formát ve kterém se objekt bude vypisovat
     def __repr__(self):
         return "Object(type: {},x: {},y: {},width: {},height: {},fill: {},text: {})".format(self.type,self.x, self.y,self.width,self.height,self.fill,self.text)
 
+#Nastavení podoby objektu jak se bude vykreslovat
     def draw(self,canvas):
         filetxt = canvas.create_rectangle(self.x - self.width/2, self.y - self.height/2,self.x + self.width/2,self.y + self.height/2, fill=self.fill, outline=self.outline_color, width=self.outline_width)
         filetxt += canvas.create_line(self.x - 20, self.y - 20,self.x + 20,self.y - 20, fill='black', width=3)
@@ -147,5 +162,6 @@ class filetxt(Shape):
         filetxt += canvas.create_text(self.x - 2.5*len(self.name),self.y + 40, anchor='w', text="%s" % self.name)
         return filetxt
 
+#Detekuje zda se kurzor nachází v objektu
     def detect_cursor(self,point):
         return (self.x - self.width/2 <= point.x <= self.x + self.width/2 and self.y - self.height/2 <= point.y <= self.y + self.height/2)

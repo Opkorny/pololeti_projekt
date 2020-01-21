@@ -2,7 +2,7 @@ from tkinter import *
 from objects import *
 import subprocess
 
-
+#Dialogové okno pro přihlášení uživatele
 class userDialog:
     def __init__(self, parent, user):
         self.parent = parent
@@ -23,10 +23,10 @@ class userDialog:
         container1 = Frame(top, width=200, pady=10, padx=10)
         self.label = Label(container1, text="Password:")
         self.label.pack(side=LEFT)
-        self.e = Entry(container1)
+        self.e = Entry(container1, show="*")
         self.e.pack(side=RIGHT)
+        self.e.focus_set()
         container1.pack(fill=BOTH)
-
         button_ok = Button(top, text="OK", command=self.ok)
         button_ok.pack(side=LEFT, padx=10, pady=10, fill=BOTH, expand=True)
         button_cancel = Button(top, text="Cancel", command=self.cancel)
@@ -44,22 +44,18 @@ class userDialog:
     def cancel(self, event=None):
         self.top.destroy()
 
-
+#Dialogové okno představující nabídku start
 class startDialog:
     def __init__(self, parent, user):
         self.user = user
         self.parent = parent
         top = self.top = Toplevel(parent)
         top.title("")
-        #top.attributes("-disabled", 1)
-        top.protocol('WM_DELETE_WINDOW', 1)
-        top.deiconify()
         top.transient(parent)
         top.grab_set_global()
         top.focus_set()
         top.geometry("%dx%d+%d+%d" %
                      (150, self.parent.winfo_screenheight(), -10, -40))
-
         button_reboot = Button(top, text="  Reboot  ", command=self.reboot)
         button_reboot.pack(side=BOTTOM, padx=10, pady=10, fill=BOTH)
         button_poweroff = Button(top, text=" Poweroff ", command=self.poweroff)
@@ -69,6 +65,7 @@ class startDialog:
         self.top.bind("<ButtonPress-1>", self.destroy)
         self.top.bind("<ButtonPress-3>", self.destroy)
 
+#Pro restart/vypnutí "počítače" (aplikace).. jsem vytvořil jednoduché dávkové soubory .bat
     def poweroff(self, event=None):
         subprocess.call([r'.\poweroff.bat'])
 
@@ -84,11 +81,11 @@ class startDialog:
             self.top.destroy()
         pass
 
-
+#Dialogové okno při vytvoření/přejmenování objektu -> určí název objektu
 class objectDialog:
-    def __init__(self, parent, folder):
+    def __init__(self, parent, obj):
         self.parent = parent
-        self.folder = folder
+        self.obj = obj
         top = self.top = Toplevel(parent)
         top.title("Creating name")
         top.transient(parent)
@@ -103,6 +100,7 @@ class objectDialog:
         self.label.pack(side=LEFT)
         self.e = Entry(container1)
         self.e.pack(side=RIGHT)
+        self.e.focus_set()
         container1.pack(fill=BOTH)
 
         button_ok = Button(top, text="OK", command=self.ok)
@@ -113,17 +111,17 @@ class objectDialog:
         self.top.bind("<Return>", self.ok)
 
     def ok(self, event=None):
-        self.folder.name = self.e.get()
+        self.obj.name = self.e.get()
         self.top.destroy()
 
     def cancel(self, event=None):
-        if self.folder.name == None:
-            self.folder.name = ""
+        if self.obj.name == None:
+            self.obj.name = ""
         else:
-            self.folder.name = self.folder.name
+            self.obj.name = self.obj.name
         self.top.destroy()
 
-
+#Dialogové okno představující textový soubor
 class openfile:
     def __init__(self, parent, file):
         self.parent = parent
@@ -141,9 +139,10 @@ class openfile:
         yscroll.pack(side=RIGHT, fill=Y)
         xscroll = Scrollbar(container, orient=HORIZONTAL)
         xscroll.pack(side=BOTTOM, fill=X)
-        self.e = Text(container, width=int(self.screen_width), height=45, wrap=NONE, yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        self.e = Text(container, width=int(self.screen_width), height=int(self.screen_height/18), wrap=NONE, yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
         self.e.insert(1.0, self.file.text)
         self.e.pack(side=RIGHT, ipady=20)
+        self.e.focus_set()
         container.pack(side=TOP, fill=BOTH)
         yscroll.config(command=self.e.yview)
         xscroll.config(command=self.e.xview)
@@ -163,11 +162,15 @@ class openfile:
     def cancel(self, event=None):
         self.top.destroy()
 
+#Dialogové okno představující složku (složka má fungovat stejně jako plocha)
 
+#Problém nastavá po tom co složku zavřete -> proběhne totiž uložení objektů do JSONu... což nefunguje, 
+#nenačtou se tedy žádné soubory předem vytvořené + přestanou fungovat funkce (metody)
 class openfolder:
     def __init__(self, parent, folder):
         self.parent = parent
         self.folder = folder
+        self.folder.objects = []
         self.object = None
         self.screen_width = self.parent.winfo_screenwidth()/2
         self.screen_height = self.parent.winfo_screenheight()-50
@@ -192,11 +195,9 @@ class openfolder:
         self.c.pack(fill=BOTH, expand=True)
         container.pack(side=TOP, fill=BOTH)
 
-        container1 = Frame( top, width=self.screen_width, height=40)
-        button_ok = Button(container1, text="Save", command=self.ok)
-        button_ok.pack(side=LEFT, padx=5, pady=5, fill=BOTH, expand=True)
-        button_cancel = Button(container1, text="Storno", command=self.cancel)
-        button_cancel.pack(side=RIGHT, padx=5, pady=5, fill=BOTH, expand=True)
+        container1 = Frame(top, width=self.screen_width, height=40)
+        button_ok = Button(container1, text="Close folder - %s" % self.folder.name, command=self.ok)
+        button_ok.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH, expand=True)
         container1.pack(side=BOTTOM, fill=BOTH)
         self.c.bind("<Motion>", self.on_mouse_move)
         self.c.bind("<ButtonRelease-3>", self.on_button_release)
@@ -204,7 +205,7 @@ class openfolder:
         self.c.bind("<B1-Motion>", self.on_move_press)
         self.redraw_canvas()
 
-    
+#Všechny metody stejné jako v app.py -> ty které zajišťují práci s objekty
     def clear_canvas(self):
         self.c.delete("all")
 
@@ -290,7 +291,4 @@ class openfolder:
             self.parent.wait_window(obj.top)
 
     def ok(self, event=None):
-        self.top.destroy()
-
-    def cancel(self, event=None):
         self.top.destroy()
